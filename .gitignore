@@ -1,0 +1,8 @@
+
+.vscode
+sounds
+img/*
+sample
+
+*.pyc
+*.svg
