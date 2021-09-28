@@ -5,6 +5,8 @@ FFMPEG_PATH = 'I:\\ffmpeg'
 
 import sys
 
+import os
+
 from graph_frame import GraphFrame
 import tkinter as tk
 from jukebox import *
@@ -36,6 +38,9 @@ class Application(tk.Frame):
         record_btn = tk.Button(input_menu_frame,text='●',fg='red')
         record_btn.pack(side=tk.LEFT)
         def openfile():
+            typ = [("音声ファイル",".wav .mp3 .mp4 .ogg"),("","*")]
+            dir = os.path.abspath(os.path.dirname(__file__))
+            OPENFILE = tk.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
             self.jukebox.select_music(False, OPENFILE)
         openfile_btn = tk.Button(input_menu_frame,text=u'OpenFile', command=openfile)
         openfile_btn.pack(side=tk.LEFT)
@@ -49,6 +54,9 @@ class Application(tk.Frame):
         start_btn.pack(side=tk.LEFT)
         stop_btn = tk.Button(play_menu_frame,text=u'■', fg='black', command=self.jukebox.stop)
         stop_btn.pack(side=tk.LEFT)
+        self.gain_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = 0.0, to = 2.0, resolution=0.1,command=self.jukebox.set_gain)
+        self.gain_bar.set(1.0)
+        self.gain_bar.pack(side=tk.LEFT)
 
         # オシロ画面
         wave_graph = GraphFrame(self)
