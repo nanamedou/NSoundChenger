@@ -70,3 +70,21 @@ class LPF(FilterBase):
             self.initial[channel] = oldsig
 
         return buf
+
+# ゲインフィルタ
+class Gain(InheritCh):
+    
+    def __init__(self, source: FilterBase, gain: int):
+        super().__init__(source)
+        if(gain < 0):
+            print('nanamesst->filter->Gain: gain must positive!!')
+            delay = 0
+        self._gain = gain
+
+    # dataは bitデータ * チャンネルデータ
+    # 出力は bitデータ * チャンネルデータ
+    def get(self, size):
+
+        data = self._source.get(size) * self._gain
+
+        return data
