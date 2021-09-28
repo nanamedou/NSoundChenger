@@ -1,10 +1,3 @@
-#描画情報
-SCREEN_SIZE = (1366, 768)
-SCREEN_CAPTION = u"uta-O"
-
-FONT_FILE = 'fonts/mplus-2p-regular.ttf'
-FONT_SIZE = 18
-
 #音声関連
 SAMPLING_RATE= 44100
 BUFFER_SIZE = 1024

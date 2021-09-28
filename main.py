@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+FFMPEG_PATH = 'I:\\ffmpeg'
+
+import sys
+
 from graph_frame import GraphFrame
 import tkinter as tk
 from jukebox import *
-
-import sys
 
 OPENFILE = 0
 
 if len(sys.argv) >= 2:
     OPENFILE = sys.argv[1]
 else:
-    OPENFILE = './sounds/sin.wav'
-
-#OPENFILE='./British_Grenadiers.ogg.mp3'
-#OPENFILE='./doremi.wav'
+    OPENFILE='./sounds/British_Grenadiers.ogg.mp3'
 
 class Application(tk.Frame):
     def __init__(self, master=None):
