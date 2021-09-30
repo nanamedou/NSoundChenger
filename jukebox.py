@@ -11,7 +11,7 @@ from filter.source import Source
 from filter.basic import Gain
 from filter.wnd import WND, RWND
 from filter.fft import FFT, IFFT
-from filter.spectrum import SpectrumShiftA, SpectrumShiftB
+from filter.spectrum import SpectrumShift
 
 from os.path import splitext
 
@@ -63,7 +63,8 @@ class Jukebox:
 
             layer = WND(self._fsource, 1024, 256)
             layer = FFT(layer)
-            layer = SpectrumShiftB(layer, 2)
+            layer = SpectrumShift(layer, 0)
+            self._fspshift = layer
             layer = IFFT(layer)
             layer = RWND(layer, 1024, 256)
 
@@ -97,6 +98,10 @@ class Jukebox:
     def set_gain(self, value):
         if self._fgain:
             self._fgain.value = value
+
+    def set_spshift(self, value):
+        if self._fspshift:
+            self._fspshift.value = value
 
     # 再生機能
 
