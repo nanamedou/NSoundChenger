@@ -58,8 +58,8 @@ class Application(tk.Frame):
 
         # 再生選択メニュー
         play_menu_frame = tk.Frame(self)
-        play_menu_frame.pack(side=tk.TOP)
-        rewind_btn = tk.Button(play_menu_frame,text='◀')
+        play_menu_frame.pack(side=tk.TOP, fill=tk.X)
+        rewind_btn = tk.Button(play_menu_frame,text='◀', command=lambda:self.jukebox.select_music(False, OPENFILE))
         rewind_btn.pack(side=tk.LEFT)
         start_btn = tk.Button(play_menu_frame,text=u'▶', fg='red', command=self.jukebox.play)
         start_btn.pack(side=tk.LEFT)
@@ -68,11 +68,11 @@ class Application(tk.Frame):
 
         self.gain_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = 0.0, to = 2.0, resolution=0.1,command=self.jukebox.set_gain)    # 音量変更バー
         self.gain_bar.set(1.0)
-        self.gain_bar.pack(side=tk.TOP)
+        self.gain_bar.pack(side=tk.TOP, fill=tk.X)
 
-        self.spshift_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = -100, to = 100, resolution=1,command=self.jukebox.set_spshift)    # 音色変更バー
+        self.spshift_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = -30, to = 30, resolution=1,command=self.jukebox.set_spshift)    # 音色変更バー
         self.spshift_bar.set(0)
-        self.spshift_bar.pack(side=tk.TOP)
+        self.spshift_bar.pack(side=tk.TOP, fill=tk.X)
 
         # オシロ画面
         wave_graph = GraphFrame(self)
