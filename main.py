@@ -26,13 +26,14 @@ class Application(tk.Frame):
         self.master = master
         self.pack(side=tk.TOP ,fill=tk.BOTH, expand=1)
 
+        self.openfilepath = OPENFILE
         self.create_widgets()
 
     def create_widgets(self):
 
         self.jukebox = Jukebox()
 
-        self.jukebox.select_music(False, OPENFILE)
+        self.jukebox.select_music(False, self.openfilepath)
 
         # 入力選択メニュー
         input_menu_frame = tk.Frame(self)
@@ -42,8 +43,8 @@ class Application(tk.Frame):
         def openfile():
             typ = [("音声ファイル",".wav .mp3 .mp4 .ogg"),("","*")]
             dir = os.path.abspath(os.path.dirname(__file__))
-            OPENFILE = tk.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
-            self.jukebox.select_music(False, OPENFILE)
+            self.openfilepath = tk.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
+            self.jukebox.select_music(False, self.openfilepath)
         openfile_btn = tk.Button(input_menu_frame,text=u'OpenFile', command=openfile)
         openfile_btn.pack(side=tk.LEFT)
 
@@ -59,7 +60,7 @@ class Application(tk.Frame):
         # 再生選択メニュー
         play_menu_frame = tk.Frame(self)
         play_menu_frame.pack(side=tk.TOP, fill=tk.X)
-        rewind_btn = tk.Button(play_menu_frame,text='◀', command=lambda:self.jukebox.select_music(False, OPENFILE))
+        rewind_btn = tk.Button(play_menu_frame,text='◀', command=lambda:self.jukebox.select_music(False, self.openfilepath))
         rewind_btn.pack(side=tk.LEFT)
         start_btn = tk.Button(play_menu_frame,text=u'▶', fg='red', command=self.jukebox.play)
         start_btn.pack(side=tk.LEFT)
