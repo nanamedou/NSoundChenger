@@ -32,18 +32,19 @@ class SpectrumShift(InheritCh):
 
         if(offs > 0):
             data_fft = np.concatenate((
-                data_fft[offs:size//2],
-                np.zeros(shape=(offs, self._ch)),
-                np.zeros(shape=(offs, self._ch)),
-                data_fft[size//2:size-offs]))
-
-        elif(offs < 0):
-            offs = -offs
-            data_fft = np.concatenate((
                 np.zeros(shape=(offs, self._ch)),
                 data_fft[0:size//2 - offs],
                 data_fft[size//2 + offs:size],
                 np.zeros(shape=(offs, self._ch))))
+
+
+        elif(offs < 0):
+            offs = -offs
+            data_fft = np.concatenate((
+                data_fft[offs:size//2],
+                np.zeros(shape=(offs, self._ch)),
+                np.zeros(shape=(offs, self._ch)),
+                data_fft[size//2:size-offs]))
 
         return data_fft
 
@@ -53,7 +54,7 @@ class SpectrumShift(InheritCh):
     
     @value.setter
     def value(self, d):
-        self._d = d
+        self._d = int(d)
 
 # 音程変更フィルタ
 # スペクトラムを低周波数域にずらす
