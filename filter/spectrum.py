@@ -125,8 +125,14 @@ class SpectrumPitch(InheritCh):
         self._size = size
         self._scale = scale
 
-        # 音のピッチを変更するための行列作成。
-        # 行列サイズはsize*size
+        self._generate_matrix()
+
+
+    # 音のピッチを変更するための行列作成。
+    # 行列サイズはsize*size
+    def _generate_matrix(self):
+        size = self._size
+        scale = self._scale
 
         # x[f, t] = cos(2 * pi * f * t / T) をDTFTした結果X[f, w]を周波数成分Y[w]にかけると
         # ゲインと角度がY[w]で周波数がfのスペクトルが得られる
@@ -147,11 +153,12 @@ class SpectrumPitch(InheritCh):
         wav = np.exp(t @ f2pi * 1j) / size
         # コサイン波のDTFT[w, f]を作成
         modspec = np.fft.fft(wav, n=size, axis=0)
-        self._mat = modspec
+        self._mat = modspec # 音のピッチを変更するための行列
+
         dw = f - w
         dw = np.tile(dw, (self._ch, 1))
         dw = dw.T
-        self._dw = dw
+        self._dw = dw       # 変換後の音と元の音の角速度の差
 
     def get(self, size):
 
@@ -167,3 +174,13 @@ class SpectrumPitch(InheritCh):
         data = self._mat @ data
 
         return data
+
+
+    @property
+    def value(self):
+        return self._scale
+    
+    @value.setter
+    def value(self, scale: float):
+        self._scale = float(scale)
+        self._generate_matrix()
