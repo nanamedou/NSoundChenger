@@ -6,12 +6,14 @@ FFMPEG_PATH = 'I:\\ffmpeg'
 import sys
 
 import os
+from uuid import SafeUUID
 
 from graph_frame import GraphFrame
 import tkinter as tk
 from jukebox import *
 
 OPENFILE = 0
+SAVEFILE = 'hogehoge.mp3'
 
 if len(sys.argv) >= 2:
     OPENFILE = sys.argv[1]
@@ -44,6 +46,15 @@ class Application(tk.Frame):
             self.jukebox.select_music(False, OPENFILE)
         openfile_btn = tk.Button(input_menu_frame,text=u'OpenFile', command=openfile)
         openfile_btn.pack(side=tk.LEFT)
+
+        def savefile():
+            if(self.jukebox.is_recording):
+                self.jukebox.record_stop()
+                self.jukebox.record_save(SAVEFILE)
+            else:
+                self.jukebox.record_start()
+        savefile_btn = tk.Button(input_menu_frame,text=u'SaveFile', command=savefile)
+        savefile_btn.pack(side=tk.LEFT)
 
         # 再生選択メニュー
         play_menu_frame = tk.Frame(self)

@@ -6,5 +6,6 @@ sample
 
 *.pyc
 *.svg
+*.mp3
 
 wav2picip.py
