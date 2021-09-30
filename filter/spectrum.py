@@ -9,8 +9,54 @@ import numpy as np
 from filter.base import FilterBase, FilterRoot, InheritCh
 
 # 音程変更フィルタ
-# fft
+# スペクトラムをずらす
+# d > 0 で高周波数域にずらす
+# d < 0 で低周波数域にずらす
 
+class SpectrumShift(InheritCh):
+    def __init__(self, source: FilterBase, d: int):
+        super().__init__(source)
+        self._d = d
+
+    def get(self, size):
+
+        # 低音化フィルター
+        offs = self._d
+
+        start_point = self._source.sample_start_point
+        data_fft = self._source.get(size).copy()
+
+        dt = 2.0j * np.math.pi * start_point * offs / size
+        dr = np.exp(dt)
+        data_fft *= dr
+
+        if(offs > 0):
+            data_fft = np.concatenate((
+                data_fft[offs:size//2],
+                np.zeros(shape=(offs, self._ch)),
+                np.zeros(shape=(offs, self._ch)),
+                data_fft[size//2:size-offs]))
+
+        elif(offs < 0):
+            offs = -offs
+            data_fft = np.concatenate((
+                np.zeros(shape=(offs, self._ch)),
+                data_fft[0:size//2 - offs],
+                data_fft[size//2 + offs:size],
+                np.zeros(shape=(offs, self._ch))))
+
+        return data_fft
+
+    @property
+    def value(self):
+        return self._d
+    
+    @value.setter
+    def value(self, d):
+        self._d = d
+
+# 音程変更フィルタ
+# スペクトラムを低周波数域にずらす
 
 class SpectrumShiftA(InheritCh):
 
@@ -37,6 +83,9 @@ class SpectrumShiftA(InheritCh):
             data_fft[size//2:size-offs]))
 
         return data_fft
+
+# 音程変更フィルタ
+# スペクトラムを高周波数域にずらす
 
 class SpectrumShiftB(InheritCh):
 
