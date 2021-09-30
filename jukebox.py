@@ -11,7 +11,7 @@ from filter.source import Source
 from filter.basic import Gain
 from filter.wnd import WND, RWND
 from filter.fft import FFT, IFFT
-from filter.spectrum import SpectrumShift
+from filter.spectrum import SpectrumPitch
 
 from os.path import splitext
 
@@ -61,12 +61,12 @@ class Jukebox:
             # 入力から出力までのフィルタパイプラインを構築
             self._fsource = Source(audio_array_data.reshape((-1,audio_data.channels)), audio_data.frame_rate)
 
-            layer = WND(self._fsource, 1024, 256)
+            layer = WND(self._fsource, 512, 64)
             layer = FFT(layer)
-            layer = SpectrumShift(layer, 0)
+            layer = SpectrumPitch(layer, 512, 0)
             self._fspshift = layer
             layer = IFFT(layer)
-            layer = RWND(layer, 1024, 256)
+            layer = RWND(layer, 512, 64)
 
             self._fgain = Gain(layer , 1)
             self.source = self._fgain
