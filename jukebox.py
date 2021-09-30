@@ -78,7 +78,7 @@ class Jukebox:
 
                 # 録音機能
                 if(self._is_recording):
-                    np.clip(data, 0.0, 1.0)
+                    data = np.clip(data, 0.0, 1.0)
                     self._record_data_list += [(data * (2**16 - 1)).astype(np.uint16)]
 
                 return (data, pyaudio.paContinue)
