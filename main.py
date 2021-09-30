@@ -65,9 +65,14 @@ class Application(tk.Frame):
         start_btn.pack(side=tk.LEFT)
         stop_btn = tk.Button(play_menu_frame,text=u'■', fg='black', command=self.jukebox.stop)
         stop_btn.pack(side=tk.LEFT)
-        self.gain_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = 0.0, to = 2.0, resolution=0.1,command=self.jukebox.set_gain)
+
+        self.gain_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = 0.0, to = 2.0, resolution=0.1,command=self.jukebox.set_gain)    # 音量変更バー
         self.gain_bar.set(1.0)
-        self.gain_bar.pack(side=tk.LEFT)
+        self.gain_bar.pack(side=tk.TOP)
+
+        self.spshift_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = -100, to = 100, resolution=1,command=self.jukebox.set_spshift)    # 音色変更バー
+        self.spshift_bar.set(0)
+        self.spshift_bar.pack(side=tk.TOP)
 
         # オシロ画面
         wave_graph = GraphFrame(self)
