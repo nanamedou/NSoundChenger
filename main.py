@@ -6,9 +6,11 @@ FFMPEG_PATH = 'I:\\ffmpeg'
 import sys
 
 import os
-from uuid import SafeUUID
 
-from graph_frame import GraphFrame
+from numpy.core.numeric import isclose
+from analyzer_frame import AnalyzerFrame
+
+import tkinter.filedialog
 import tkinter as tk
 from jukebox import *
 
@@ -26,12 +28,23 @@ class Application(tk.Frame):
         self.master = master
         self.pack(side=tk.TOP ,fill=tk.BOTH, expand=1)
 
+        self.jukebox = Jukebox()
+
+        self._is_destroyed = False
+
         self.openfilepath = OPENFILE
         self.create_widgets()
 
-    def create_widgets(self):
+    def __del__(self):
+        if(not self._is_destroyed):
+            self.destroy()
 
-        self.jukebox = Jukebox()
+    def destroy(self) -> None:
+        self._is_destroyed = True
+        super().destroy()
+        self.jukebox.disable()
+
+    def create_widgets(self):
 
         self.jukebox.select_music(False, self.openfilepath)
 
@@ -43,7 +56,7 @@ class Application(tk.Frame):
         def openfile():
             typ = [("音声ファイル",".wav .mp3 .mp4 .ogg .m4a"),("","*")]
             dir = os.path.abspath(os.path.dirname(__file__))
-            self.openfilepath = tk.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
+            self.openfilepath = tkinter.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
             self.jukebox.select_music(False, self.openfilepath)
         openfile_btn = tk.Button(input_menu_frame,text=u'OpenFile', command=openfile)
         openfile_btn.pack(side=tk.LEFT)
@@ -76,8 +89,9 @@ class Application(tk.Frame):
         self.spshift_bar.pack(side=tk.TOP, fill=tk.X)
 
         # オシロ画面
-        wave_graph = GraphFrame(self)
-        wave_graph.pack(side = tk.TOP)
+        self.wave_graph = AnalyzerFrame(self, self.jukebox)
+        self.wave_graph.pack(side = tk.TOP)
+
 
 root = tk.Tk()
 app = Application(master=root)

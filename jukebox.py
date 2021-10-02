@@ -21,7 +21,7 @@ class Jukebox:
     def __init__(self) -> None:
         self.audio = pyaudio.PyAudio()
 
-        self.is_down = False
+        self.is_enable = True
 
         self.output = None
         self.source = None
@@ -34,11 +34,30 @@ class Jukebox:
 
     def __del__(self) -> None:
 
-        if(self.output):
-            self.output.stop_stream()
-            self.output.close()
+        self.disable()
 
-        self.audio.terminate()
+    def enable(self) -> None:
+        if(self.is_enable == False):
+            self.is_enable = True
+
+            self.output = None
+            self.source = None
+
+            self._is_recording = False
+            self._record_data_list = []
+
+            self._sampling_rate = 0
+            self._ch = 0
+
+    def disable(self) -> None:
+
+        if(self.is_enable):
+            self.is_enable = False
+            if(self.output):
+                self.output.stop_stream()
+                self.output.close()
+
+            self.audio.terminate()
 
     def select_music(self, mic: bool = True, musicpath=None):
         if(self.output):
