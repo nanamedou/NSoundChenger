@@ -8,7 +8,7 @@ import numpy as np
 import math
 
 from filter.source import Source
-from filter.basic import Gain
+from filter.basic import Gain, Memory
 from filter.wnd import WND, RWND, Hamming
 from filter.fft import FFT, IFFT
 from filter.spectrum import SpectrumPitch
@@ -65,6 +65,8 @@ class Jukebox:
             layer = FFT(layer)
             layer = SpectrumPitch(layer, 512, 0)
             self._fspshift = layer
+            layer = Memory(layer)
+            self._ffftspectrum = layer
             layer = IFFT(layer)
             layer = Hamming(layer, 512)
             layer = RWND(layer, 512, 64)
@@ -149,3 +151,9 @@ class Jukebox:
             ouput_segment.export(path)
 
         self._record_data_list = []
+
+    # 分析機能
+
+    def analyzer_spectrum(self):
+        return self._ffftspectrum.data[:,0]
+
