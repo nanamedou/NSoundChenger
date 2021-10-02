@@ -97,3 +97,22 @@ class Gain(InheritCh):
         data = self._source.get(size) * self._value
 
         return data
+
+# メモリフィルタ
+# 直前に通過した内容を読み取ることができる
+class Memory(InheritCh):
+
+    def __init__(self, source: FilterBase):
+        super().__init__(source)
+        self._data = np.zeros((0,1))
+
+    def get(self, size):
+        
+        data = self._source.get(size)
+        self._data = data.copy()
+
+        return data
+
+    @property
+    def data(self):
+        return self._data
