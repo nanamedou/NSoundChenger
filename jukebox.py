@@ -9,7 +9,7 @@ import math
 
 from filter.source import Source
 from filter.basic import Gain
-from filter.wnd import WND, RWND
+from filter.wnd import WND, RWND, Hamming
 from filter.fft import FFT, IFFT
 from filter.spectrum import SpectrumPitch
 
@@ -66,6 +66,7 @@ class Jukebox:
             layer = SpectrumPitch(layer, 512, 0)
             self._fspshift = layer
             layer = IFFT(layer)
+            layer = Hamming(layer, 512)
             layer = RWND(layer, 512, 64)
 
             self._fgain = Gain(layer , 1)
