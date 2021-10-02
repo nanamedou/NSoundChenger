@@ -41,7 +41,7 @@ class Application(tk.Frame):
         record_btn = tk.Button(input_menu_frame,text='●',fg='red')
         record_btn.pack(side=tk.LEFT)
         def openfile():
-            typ = [("音声ファイル",".wav .mp3 .mp4 .ogg"),("","*")]
+            typ = [("音声ファイル",".wav .mp3 .mp4 .ogg .m4a"),("","*")]
             dir = os.path.abspath(os.path.dirname(__file__))
             self.openfilepath = tk.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
             self.jukebox.select_music(False, self.openfilepath)
