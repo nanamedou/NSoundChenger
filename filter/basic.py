@@ -98,6 +98,46 @@ class Gain(InheritCh):
 
         return data
 
+# 音程変更フィルタ
+# 音をn倍速再生して音程を変える
+# Wndで挟んで使うとテンポを変えずにピッチだけ変えられる
+class Pitch(InheritCh):
+        
+    def __init__(self, source: FilterBase, scale: float):
+        super().__init__(source)
+        self._value = float(scale)
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = float(value)
+
+    def get(self, size):
+
+        data = self._source.get(size)
+
+        speed = np.exp2(self._value / 12)
+        point = np.arange(size) * speed
+
+        st = self._source.sample_start_point % size
+        st = speed * st - st
+        point =  point + st
+
+        point = np.mod(point, size)
+        f,i = np.modf(point)
+        i = i.astype(np.int32) % size
+
+        out = np.zeros_like(data)
+        data = np.concatenate((data,[data[0]]))
+
+        for c in range(self._ch):
+            out[:,c] = data[i,c] * (1 - f) + data[i + 1,c] * f
+
+        return out
+
 # メモリフィルタ
 # 直前に通過した内容を読み取ることができる
 class Memory(InheritCh):
