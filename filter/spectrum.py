@@ -197,10 +197,10 @@ class SupressSmallNoize(InheritCh):
         data = self._source.get(size).copy()
 
         for c in range(data.shape[1]):
-            sqdata = np.square(data[:,c])
-            m = np.max(sqdata)
-            threshold = m * np.square(self._threshold_mod)
-            np.putmask(data[:,c], np.square(sqdata) < threshold, 0j)
+            absdata = np.abs(data[:,c])
+            m = np.max(absdata)
+            threshold = m * self._threshold_mod
+            np.putmask(data[:,c], absdata < threshold, 0j)
 
         return data
 
