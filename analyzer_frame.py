@@ -25,7 +25,7 @@ class AnalyzerFrame(tk.Frame):
         return super().destroy()
 
     def create_widgets(self):
-        self.canvas = tk.Canvas(master=self,width=600,height=300)
+        self.canvas = tk.Canvas(master=self,width=600,height=300,highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH ,expand=1)
 
     def draw_figs(self):
@@ -43,7 +43,7 @@ class AnalyzerFrame(tk.Frame):
             spec = np.abs(spec)
 
             x = width * np.arange(len(spec)-1) // len(spec)-1
-            y = height - spec * 10
+            y = height - 1 - spec * 10
 
             self.canvas.create_line(*zip(x,y),tag="line")
 
