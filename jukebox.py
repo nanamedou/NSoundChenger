@@ -11,7 +11,7 @@ from filter.source import Source
 from filter.basic import Gain, Memory, Pitch
 from filter.wnd import WND, RWND, Hamming
 from filter.fft import FFT, IFFT
-from filter.spectrum import SpectrumPitch
+from filter.spectrum import SupressSmallNoize
 
 from os.path import splitext
 
@@ -78,19 +78,22 @@ class Jukebox:
             audio_array_data = np.array(audio_array_data, dtype=np.float32) / int_size
 
             # 入力から出力までのフィルタパイプラインを構築
-            self._fsource = Source(audio_array_data.reshape((-1,audio_data.channels)), audio_data.frame_rate)
+            layer  = Source(audio_array_data.reshape((-1,audio_data.channels)), audio_data.frame_rate)
+            self._fsource = layer
 
-            layer = WND(self._fsource, 1024, 64)
-            layer = Hamming(layer, 1024)
+            layer = WND(layer, 1024, 32)
             layer = Pitch(layer, 0)
             self._fspshift = layer
+            layer = RWND(layer, 1024, 32)
 
+            layer = WND(layer, 2048, 128)
             layer = FFT(layer)
+            layer = SupressSmallNoize(layer, 30)
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
 
-            layer = RWND(layer, 1024, 64)
+            layer = RWND(layer, 2048, 128)
 
             self._fgain = Gain(layer , 1)
             self.source = self._fgain

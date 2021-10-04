@@ -184,3 +184,33 @@ class SpectrumPitch(InheritCh):
     def value(self, scale: float):
         self._scale = float(scale)
         self._generate_matrix()
+
+class SupressSmallNoize(InheritCh):
+
+    def __init__(self, source: FilterBase, db_dffs: float = 20):
+        super().__init__(source)
+        self._db = db_dffs
+        self._threshold_mod = 1 / np.power(10, db_dffs / 20)
+
+    def get(self, size):
+
+        data = self._source.get(size).copy()
+
+        for c in range(data.shape[1]):
+            absdata = np.abs(data[:,c])
+            m = np.max(absdata)
+            threshold = m * self._threshold_mod
+            np.putmask(data[:,c], absdata < threshold, 0j)
+
+        return data
+
+
+    @property
+    def value(self):
+        return self._db
+    
+    @value.setter
+    def value(self, db_dffs: float):
+        self._db = float(db_dffs)
+        self._threshold_mod = 1 / np.power(10, db_dffs / 20)
+
