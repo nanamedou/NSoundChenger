@@ -11,7 +11,7 @@ from filter.source import Source
 from filter.basic import Gain, Memory, Pitch
 from filter.wnd import WND, RWND, Hamming
 from filter.fft import FFT, IFFT
-from filter.spectrum import SpectrumPitch
+from filter.spectrum import SupressSmallNoize
 
 from os.path import splitext
 
@@ -86,6 +86,7 @@ class Jukebox:
             self._fspshift = layer
 
             layer = FFT(layer)
+            layer = SupressSmallNoize(layer, 40)
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
