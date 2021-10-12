@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from jukebox import *
+import tkinter as tk
+import tkinter.filedialog
+from analyzer_frame import AnalyzerFrame, OscilloFrame
+from numpy.core.numeric import isclose
+import os
+import sys
 FFMPEG_PATH = 'I:\\ffmpeg'
 
-import sys
-
-import os
-
-from numpy.core.numeric import isclose
-from analyzer_frame import AnalyzerFrame
-
-import tkinter.filedialog
-import tkinter as tk
-from jukebox import *
 
 OPENFILE = 0
 SAVEFILE = 'hogehoge.mp3'
@@ -20,13 +17,14 @@ SAVEFILE = 'hogehoge.mp3'
 if len(sys.argv) >= 2:
     OPENFILE = sys.argv[1]
 else:
-    OPENFILE='./sounds/British_Grenadiers.ogg.mp3'
+    OPENFILE = './sounds/British_Grenadiers.ogg.mp3'
+
 
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master, bg="green")
         self.master = master
-        self.pack(side=tk.TOP ,fill=tk.BOTH, expand=1)
+        self.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
         self.jukebox = Jukebox()
 
@@ -51,14 +49,17 @@ class Application(tk.Frame):
         # 入力選択メニュー
         input_menu_frame = tk.Frame(self)
         input_menu_frame.pack(side=tk.TOP)
-        record_btn = tk.Button(input_menu_frame,text='●',fg='red')
+        record_btn = tk.Button(input_menu_frame, text='●', fg='red')
         record_btn.pack(side=tk.LEFT)
+
         def openfile():
-            typ = [("音声ファイル",".wav .mp3 .mp4 .ogg .m4a"),("","*")]
+            typ = [("音声ファイル", ".wav .mp3 .mp4 .ogg .m4a"), ("", "*")]
             dir = os.path.abspath(os.path.dirname(__file__))
-            self.openfilepath = tkinter.filedialog.askopenfilename(filetypes = typ,initialdir = dir)
+            self.openfilepath = tkinter.filedialog.askopenfilename(
+                filetypes=typ, initialdir=dir)
             self.jukebox.select_music(False, self.openfilepath)
-        openfile_btn = tk.Button(input_menu_frame,text=u'OpenFile', command=openfile)
+        openfile_btn = tk.Button(
+            input_menu_frame, text=u'OpenFile', command=openfile)
         openfile_btn.pack(side=tk.LEFT)
 
         def savefile():
@@ -67,30 +68,48 @@ class Application(tk.Frame):
                 self.jukebox.record_save(SAVEFILE)
             else:
                 self.jukebox.record_start()
-        savefile_btn = tk.Button(input_menu_frame,text=u'SaveFile', command=savefile)
+        savefile_btn = tk.Button(
+            input_menu_frame, text=u'SaveFile', command=savefile)
         savefile_btn.pack(side=tk.LEFT)
 
         # 再生選択メニュー
         play_menu_frame = tk.Frame(self)
         play_menu_frame.pack(side=tk.TOP, fill=tk.X)
-        rewind_btn = tk.Button(play_menu_frame,text='◀', command=lambda:self.jukebox.select_music(False, self.openfilepath))
+        rewind_btn = tk.Button(play_menu_frame, text='◀', command=lambda: self.jukebox.select_music(
+            False, self.openfilepath))
         rewind_btn.pack(side=tk.LEFT)
-        start_btn = tk.Button(play_menu_frame,text=u'▶', fg='red', command=self.jukebox.play)
+        start_btn = tk.Button(play_menu_frame, text=u'▶',
+                              fg='red', command=self.jukebox.play)
         start_btn.pack(side=tk.LEFT)
-        stop_btn = tk.Button(play_menu_frame,text=u'■', fg='black', command=self.jukebox.stop)
+        stop_btn = tk.Button(play_menu_frame, text=u'■',
+                             fg='black', command=self.jukebox.stop)
         stop_btn.pack(side=tk.LEFT)
 
-        self.gain_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = 0.0, to = 2.0, resolution=0.1,command=self.jukebox.set_gain)    # 音量変更バー
+        self.gain_bar = tk.Scale(play_menu_frame, orient=tk.HORIZONTAL, fg='black',
+                                 from_=0.0, to=2.0, resolution=0.1, command=self.jukebox.set_gain)    # 音量変更バー
         self.gain_bar.set(1.0)
         self.gain_bar.pack(side=tk.TOP, fill=tk.X)
 
-        self.spshift_bar = tk.Scale(play_menu_frame,orient=tk.HORIZONTAL, fg='black', from_ = -30, to = 30, resolution=1,command=self.jukebox.set_spshift)    # 音色変更バー
+        self.spshift_bar = tk.Scale(play_menu_frame, orient=tk.HORIZONTAL, fg='black',
+                                    from_=-30, to=30, resolution=1, command=self.jukebox.set_spshift)    # 音色変更バー
         self.spshift_bar.set(0)
         self.spshift_bar.pack(side=tk.TOP, fill=tk.X)
 
+        # フィルターメニュー
+        filter_menu_frame = tk.Frame(self)
+        filter_menu_frame.pack(side=tk.TOP, fill=tk.X)
+        v = tk.IntVar()
+        v.set(1)
+        def c(): return self.jukebox.set_supress_small_noize(v.get())
+        self.antinoize_rbtn = tk.Checkbutton(
+            filter_menu_frame, text='Anti noize type1', command=c, variable=v)
+        self.antinoize_rbtn.pack(side=tk.LEFT, fill=tk.X)
+
         # オシロ画面
         self.wave_graph = AnalyzerFrame(self, self.jukebox)
-        self.wave_graph.pack(side = tk.TOP)
+        self.wave_graph.pack(side=tk.TOP)
+        self.oscillo_graph = OscilloFrame(self, self.jukebox)
+        self.oscillo_graph.pack(side=tk.TOP)
 
 
 root = tk.Tk()

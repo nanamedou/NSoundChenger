@@ -8,14 +8,12 @@ import numpy as np
 import math
 
 from filter.source import Source
-from filter.basic import Gain, Memory
+from filter.basic import Gain, Memory, Pitch
 from filter.wnd import WND, RWND, Hamming
 from filter.fft import FFT, IFFT
-from filter.spectrum import SpectrumPitch
+from filter.spectrum import SupressSmallNoize
 
 from os.path import splitext
-
-from config import *
 
 class Jukebox:
     def __init__(self) -> None:
@@ -69,29 +67,43 @@ class Jukebox:
         else:
             # 音声データを読み取る
             _, ext = splitext(musicpath)
-            audio_data = AudioSegment.from_file(musicpath, format=ext[1:])  # オーディオデータ読み込み
+            audio_data = AudioSegment.from_file(
+                musicpath, format=ext[1:])  # オーディオデータ読み込み
             audio_array_data = audio_data.get_array_of_samples()
 
             # データが32bit浮動小数型に変換
             # 0.0~1.0の範囲に収めるので2をサンプルサイズで階乗したもので割る
             int_size = 2 ** (audio_data.sample_width * 8)
-            audio_array_data = np.array(audio_array_data, dtype=np.float32) / int_size
+            audio_array_data = np.array(
+                audio_array_data, dtype=np.float32) / int_size
 
             # 入力から出力までのフィルタパイプラインを構築
-            self._fsource = Source(audio_array_data.reshape((-1,audio_data.channels)), audio_data.frame_rate)
+            layer = Source(audio_array_data.reshape(
+                (-1, audio_data.channels)), audio_data.frame_rate)
+            self._fsource = layer
 
-            layer = WND(self._fsource, 512, 64)
-            layer = FFT(layer)
-            layer = SpectrumPitch(layer, 512, 0)
+            layer = WND(layer, 1024, 32)
+            layer = Pitch(layer, 0)
             self._fspshift = layer
+            layer = RWND(layer, 1024, 32)
+
+            layer = WND(layer, 1024, 64)
+            layer = FFT(layer)
+            self._ffft = layer
+            layer = SupressSmallNoize(layer, 30)
+            self._fsupress_small_noize = layer
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
-            layer = Hamming(layer, 512)
-            layer = RWND(layer, 512, 64)
+            layer = RWND(layer, 1024, 64)
 
-            self._fgain = Gain(layer , 1)
-            self.source = self._fgain
+            layer = Gain(layer, 1)
+            self._fgain = layer
+
+            layer = Memory(layer)
+            self._fmemout = layer
+
+            self.source = layer
 
             def callback(in_data, frame_count, time_info, status):
 
@@ -101,7 +113,8 @@ class Jukebox:
                 # 録音機能
                 if(self._is_recording):
                     data = np.clip(data, 0.0, 1.0)
-                    self._record_data_list += [(data * (2**16 - 1)).astype(np.uint16)]
+                    self._record_data_list += [(data *
+                                                (2**16 - 1)).astype(np.uint16)]
 
                 return (data, pyaudio.paContinue)
 
@@ -111,7 +124,7 @@ class Jukebox:
             self.output = self.audio.open(format=pyaudio.paFloat32,
                                           channels=self._ch,
                                           rate=self._sampling_rate,
-                                          frames_per_buffer=BUFFER_SIZE,
+                                          frames_per_buffer=1024,
                                           output=True,
                                           stream_callback=callback)
 
@@ -124,6 +137,12 @@ class Jukebox:
     def set_spshift(self, value):
         if self._fspshift:
             self._fspshift.value = value
+
+    def set_supress_small_noize(self, value):
+        if value:
+            self._ffftspectrum.set_source(self._fsupress_small_noize)
+        else:
+            self._ffftspectrum.set_source(self._ffft)
 
     # 再生機能
 
@@ -146,7 +165,7 @@ class Jukebox:
 
     def record_stop(self):
         self._is_recording = False
-    
+
     def record_save(self, path):
 
         if(len(self._record_data_list) > 0):
@@ -157,7 +176,8 @@ class Jukebox:
             for d in self._record_data_list:
                 recorded_length += d.shape[0]
 
-            record_data = np.ndarray(shape=(recorded_length, self._ch), dtype=np.int16)
+            record_data = np.ndarray(
+                shape=(recorded_length, self._ch), dtype=np.int16)
             saved_length = 0
 
             # 保存するデータの長さを計算
@@ -165,7 +185,8 @@ class Jukebox:
                 record_data[saved_length:saved_length + d.shape[0]] = d
                 saved_length += d.shape[0]
 
-            ouput_segment = AudioSegment(record_data.tobytes(), sample_width=2, frame_rate=self._sampling_rate, channels=self._ch)
+            ouput_segment = AudioSegment(record_data.tobytes(
+            ), sample_width=2, frame_rate=self._sampling_rate, channels=self._ch)
 
             ouput_segment.export(path)
 
@@ -174,5 +195,7 @@ class Jukebox:
     # 分析機能
 
     def analyzer_spectrum(self):
-        return self._ffftspectrum.data[:,0]
+        return self._ffftspectrum.data[:, 0]
 
+    def analyzer_oscillo(self):
+        return self._fmemout.data[:, 0]

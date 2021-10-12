@@ -3,11 +3,11 @@
 sounds
 img/*
 sample
+dev
 
 *.pyc
 *.svg
 *.mp3
 
-作業メモ.md
-
 wav2picip.py
+graph_frame.py
