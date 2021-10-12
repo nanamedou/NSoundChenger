@@ -8,7 +8,7 @@ import sys
 import os
 
 from numpy.core.numeric import isclose
-from analyzer_frame import AnalyzerFrame
+from analyzer_frame import AnalyzerFrame, OscilloFrame
 
 import tkinter.filedialog
 import tkinter as tk
@@ -91,6 +91,8 @@ class Application(tk.Frame):
         # オシロ画面
         self.wave_graph = AnalyzerFrame(self, self.jukebox)
         self.wave_graph.pack(side = tk.TOP)
+        self.oscillo_graph = OscilloFrame(self, self.jukebox)
+        self.oscillo_graph.pack(side = tk.TOP)
 
 
 root = tk.Tk()
