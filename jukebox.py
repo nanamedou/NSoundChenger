@@ -95,8 +95,14 @@ class Jukebox:
 
             layer = RWND(layer, 2048, 128)
 
-            self._fgain = Gain(layer , 1)
-            self.source = self._fgain
+            layer = Gain(layer , 1)
+            self._fgain = layer
+
+            layer = Memory(layer)
+            self._fmemout = layer
+
+            self.source = layer
+
 
             def callback(in_data, frame_count, time_info, status):
 
@@ -180,4 +186,7 @@ class Jukebox:
 
     def analyzer_spectrum(self):
         return self._ffftspectrum.data[:,0]
+
+    def analyzer_oscillo(self):
+        return self._fmemout.data[:,0]
 
