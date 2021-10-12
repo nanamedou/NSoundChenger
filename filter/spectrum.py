@@ -13,6 +13,7 @@ from filter.base import FilterBase, FilterRoot, InheritCh
 # d > 0 で高周波数域にずらす
 # d < 0 で低周波数域にずらす
 
+
 class SpectrumShift(InheritCh):
     def __init__(self, source: FilterBase, d: int):
         super().__init__(source)
@@ -37,7 +38,6 @@ class SpectrumShift(InheritCh):
                 data_fft[size//2 + offs:size],
                 np.zeros(shape=(offs, self._ch))))
 
-
         elif(offs < 0):
             offs = -offs
             data_fft = np.concatenate((
@@ -51,13 +51,14 @@ class SpectrumShift(InheritCh):
     @property
     def value(self):
         return self._d
-    
+
     @value.setter
     def value(self, d):
         self._d = int(d)
 
 # 音程変更フィルタ
 # スペクトラムを低周波数域にずらす
+
 
 class SpectrumShiftA(InheritCh):
 
@@ -88,6 +89,7 @@ class SpectrumShiftA(InheritCh):
 # 音程変更フィルタ
 # スペクトラムを高周波数域にずらす
 
+
 class SpectrumShiftB(InheritCh):
 
     def __init__(self, source: FilterBase, d: int):
@@ -117,8 +119,9 @@ class SpectrumShiftB(InheritCh):
 # 音のピッチを変更する
 # 変更はスケールで変える。
 #
-class SpectrumPitch(InheritCh):
 
+
+class SpectrumPitch(InheritCh):
 
     def __init__(self, source: FilterBase, size: int, scale: float):
         super().__init__(source)
@@ -127,9 +130,9 @@ class SpectrumPitch(InheritCh):
 
         self._generate_matrix()
 
-
     # 音のピッチを変更するための行列作成。
     # 行列サイズはsize*size
+
     def _generate_matrix(self):
         size = self._size
         scale = self._scale
@@ -137,10 +140,10 @@ class SpectrumPitch(InheritCh):
         # x[f, t] = cos(2 * pi * f * t / T) をDTFTした結果X[f, w]を周波数成分Y[w]にかけると
         # ゲインと角度がY[w]で周波数がfのスペクトルが得られる
         # なので以下の式で音程を変更できる
-        # / X[f0, w0] X[f1, w0] ・・・ X[fT-1, w0]      \        /  Y[w0] \ 
+        # / X[f0, w0] X[f1, w0] ・・・ X[fT-1, w0]      \        /  Y[w0] \
         # | X[f0, w1] X[f1, w1] ・・・ X[fT-1, w1]       |    *  |  Y[w1]  |
         # |                     ・・・                   |       |    ・   |
-        # \ X[f0, wT-1] X[f1, wT-1] ・・・ X[fT-1, wT-1]  /       \ Y[wT-1]/ 
+        # \ X[f0, wT-1] X[f1, wT-1] ・・・ X[fT-1, wT-1]  /       \ Y[wT-1]/
         # これの左の行列を求める
 
         w = np.fft.fftfreq(size)
@@ -153,7 +156,7 @@ class SpectrumPitch(InheritCh):
         wav = np.exp(t @ f2pi * 1j) / size
         # コサイン波のDTFT[w, f]を作成
         modspec = np.fft.fft(wav, n=size, axis=0)
-        self._mat = modspec # 音のピッチを変更するための行列
+        self._mat = modspec  # 音のピッチを変更するための行列
 
         dw = f - w
         dw = np.tile(dw, (self._ch, 1))
@@ -175,15 +178,15 @@ class SpectrumPitch(InheritCh):
 
         return data
 
-
     @property
     def value(self):
         return self._scale
-    
+
     @value.setter
     def value(self, scale: float):
         self._scale = float(scale)
         self._generate_matrix()
+
 
 class SupressSmallNoize(InheritCh):
 
@@ -197,20 +200,18 @@ class SupressSmallNoize(InheritCh):
         data = self._source.get(size).copy()
 
         for c in range(data.shape[1]):
-            absdata = np.abs(data[:,c])
+            absdata = np.abs(data[:, c])
             m = np.max(absdata)
             threshold = m * self._threshold_mod
-            np.putmask(data[:,c], absdata < threshold, 0j)
+            np.putmask(data[:, c], absdata < threshold, 0j)
 
         return data
-
 
     @property
     def value(self):
         return self._db
-    
+
     @value.setter
     def value(self, db_dffs: float):
         self._db = float(db_dffs)
         self._threshold_mod = 1 / np.power(10, db_dffs / 20)
-

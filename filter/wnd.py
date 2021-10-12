@@ -11,9 +11,11 @@ from filter.base import FilterBase, InheritCh
 # 矩形窓関数フィルタ
 # wndmoveだけずらしたwndsizeのデータを返す
 # 例) source[0:wndsize] & source[wndmove :wndmove + wndsize] & source[wndmove * 2 :wndmove * 2 + wndsize] & ...
+
+
 class WND(InheritCh):
 
-    def __init__(self, source:FilterBase, wndsize:int, wndmove:int):
+    def __init__(self, source: FilterBase, wndsize: int, wndmove: int):
         super().__init__(source)
         self._buffer = np.zeros(shape=(wndsize, source._ch))
         self._wndsize = wndsize
@@ -42,7 +44,7 @@ class WND(InheritCh):
 
 class Hamming(InheritCh):
 
-    def __init__(self, source:FilterBase, size:int):
+    def __init__(self, source: FilterBase, size: int):
         super().__init__(source)
         self._hamming = np.hamming(size)
 
@@ -50,13 +52,14 @@ class Hamming(InheritCh):
         data = self._source.get(size).copy()
 
         for c in range(self._ch):
-            data[:,c] *= self._hamming
+            data[:, c] *= self._hamming
 
         return data
-        
+
+
 class IHamming(InheritCh):
 
-    def __init__(self, source:FilterBase, size:int):
+    def __init__(self, source: FilterBase, size: int):
         super().__init__(source)
         self._ihamming = 1 / np.hamming(size)
 
@@ -64,7 +67,7 @@ class IHamming(InheritCh):
         data = self._source.get(size).copy()
 
         for c in range(self._ch):
-            data[:,c] *= self._ihamming
+            data[:, c] *= self._ihamming
 
         return data
 
@@ -73,13 +76,14 @@ class IHamming(InheritCh):
 # 窓関数で分割されたデータを結合する
 class RWND(InheritCh):
 
-    def __init__(self, source:FilterBase, wndsize:int, wndmove:int):
+    def __init__(self, source: FilterBase, wndsize: int, wndmove: int):
         super().__init__(source)
         self._buffer = np.zeros(shape=(wndsize, source._ch))  # 結合済みデータ保存バッファ
-        self._buffer2 = np.zeros(shape=(wndsize, source._ch)) # 読み取りデータ一時保存バッファ
+        self._buffer2 = np.zeros(
+            shape=(wndsize, source._ch))  # 読み取りデータ一時保存バッファ
         self._wndsize = wndsize
         self._wndmove = wndmove
-        self._datamod = wndmove / wndsize # 窓移動量/窓サイズ　ソースから得たデータの重さに使う
+        self._datamod = wndmove / wndsize  # 窓移動量/窓サイズ　ソースから得たデータの重さに使う
         self._bufcur = wndsize
         self._cur = 0      # 書き出したデータサイズ
 
@@ -89,10 +93,8 @@ class RWND(InheritCh):
         res = np.zeros(shape=(size, self._ch))
         rescur = 0
 
-
         # 要求データ量のsizeが0になるまでデータの読出しを繰り返す
         while size > 0:
-
 
             # バッファ読み取りカーソル位置が読み取り範囲[wndmove:]のときずっと
             # ソースからデータを読み取りwndmoveだけ時間を進めたバッファと合成
@@ -100,13 +102,14 @@ class RWND(InheritCh):
             while self._bufcur >= self._wndmove:
 
                 self._bufcur -= self._wndmove
-                self._buffer2[:] = self._source.get(self._wndsize)  # ソースからデータを読み取り
+                self._buffer2[:] = self._source.get(
+                    self._wndsize)  # ソースからデータを読み取り
                 self._buffer2[:] *= self._datamod                   # 合成前の処理
-                self._buffer2[:-self._wndmove] += self._buffer[self._wndmove:]  # 結合前データと合成
+                # 結合前データと合成
+                self._buffer2[:-self._wndmove] += self._buffer[self._wndmove:]
                 d = self._buffer                                    # バッファのスワップ
                 self._buffer = self._buffer2
                 self._buffer2 = d
-
 
             # バッファの[0:wndmove]の区間だけ読出しをする。この区間は窓関数で分割した値が掛け合わされている。
             # 読み取りカーソル位置+読み取り要求サイズが[0:wndmove]の区間内であれば、そのままバッファから読み取りカーソル等を変更数する。
@@ -119,7 +122,8 @@ class RWND(InheritCh):
             # 読み取りカーソル位置+読み取り要求サイズが[0:wndmove]の区間外であれば、いったん、wndmoveまでのバッファを読み取りカーソルを変更する。
             else:
                 writesize = self._wndmove - self._bufcur
-                res[rescur:rescur+writesize] = self._buffer[self._bufcur:self._bufcur + writesize]
+                res[rescur:rescur +
+                    writesize] = self._buffer[self._bufcur:self._bufcur + writesize]
                 self._bufcur = self._wndmove
                 rescur += writesize
                 size -= writesize
