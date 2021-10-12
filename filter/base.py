@@ -14,6 +14,9 @@ class FilterBase:
     def get(self, size):
         return self._source.get(size)
 
+    def set_source(self, source, i=0):
+        self._source = source
+
     @property
     def sampling_rate(self):
         return self._source.sampling_rate
@@ -21,7 +24,6 @@ class FilterBase:
     @property
     def sample_start_point(self):
         return self._source.sample_start_point
-
 
 class FilterRoot(FilterBase):
 

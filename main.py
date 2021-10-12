@@ -88,6 +88,15 @@ class Application(tk.Frame):
         self.spshift_bar.set(0)
         self.spshift_bar.pack(side=tk.TOP, fill=tk.X)
 
+        # フィルターメニュー
+        filter_menu_frame = tk.Frame(self)
+        filter_menu_frame.pack(side=tk.TOP, fill=tk.X)
+        v = tk.IntVar()
+        v.set(1)
+        c = lambda : self.jukebox.set_supress_small_noize(v.get())
+        self.antinoize_rbtn = tk.Checkbutton(filter_menu_frame,text='Anti noize type1', command=c, variable=v)
+        self.antinoize_rbtn.pack(side=tk.LEFT, fill=tk.X)
+
         # オシロ画面
         self.wave_graph = AnalyzerFrame(self, self.jukebox)
         self.wave_graph.pack(side = tk.TOP)
