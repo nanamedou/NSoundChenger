@@ -25,7 +25,8 @@ class Source(FilterRoot):
         readsize = res.shape[0]
 
         if(readsize < size):
-            res = np.concatenate((res, np.zeros(shape=(size-readsize, self._ch))))
+            res = np.concatenate(
+                (res, np.zeros(shape=(size-readsize, self._ch))))
 
         return res
 
@@ -36,4 +37,3 @@ class Source(FilterRoot):
     @property
     def sample_start_point(self) -> int:
         return self._cur
-

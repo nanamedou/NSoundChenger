@@ -21,12 +21,12 @@ class Delay(InheritCh):
     # 出力は bitデータ * チャンネルデータ
     def get(self, size):
 
-        data = np.zeros(shape=(size,self._ch))
+        data = np.zeros(shape=(size, self._ch))
 
         # デェレイ中の時データは読み取らない
         if(self._cur > size):
             read_size = 0
-            self._cur -=  size
+            self._cur -= size
         # デェレイが終わってたらサイズ分読み取る
         else:
             read_size = size - self._cur
@@ -42,6 +42,8 @@ class Delay(InheritCh):
 
 # ローパスフィルタ
 # rcローパスフィルタを再現する線形フィルタ
+
+
 class LPF(FilterBase):
 
     def __init__(self, source, ch, rc, sample_rate, initial, channels):
@@ -72,8 +74,10 @@ class LPF(FilterBase):
         return buf
 
 # ゲインフィルタ
+
+
 class Gain(InheritCh):
-    
+
     def __init__(self, source: FilterBase, gain: float):
         super().__init__(source)
         if(gain < 0):
@@ -89,9 +93,9 @@ class Gain(InheritCh):
     def value(self, value):
         self._value = float(value)
 
-
     # dataは bitデータ * チャンネルデータ
     # 出力は bitデータ * チャンネルデータ
+
     def get(self, size):
 
         data = self._source.get(size) * self._value
@@ -101,8 +105,10 @@ class Gain(InheritCh):
 # 音程変更フィルタ
 # 音をn倍速再生して音程を変える
 # Wndで挟んで使うとテンポを変えずにピッチだけ変えられる
+
+
 class Pitch(InheritCh):
-        
+
     def __init__(self, source: FilterBase, scale: float):
         super().__init__(source)
         self._value = float(scale)
@@ -124,30 +130,32 @@ class Pitch(InheritCh):
 
         st = self._source.sample_start_point % size
         st = speed * st - st
-        point =  point + st
+        point = point + st
 
         point = np.mod(point, size)
-        f,i = np.modf(point)
+        f, i = np.modf(point)
         i = i.astype(np.int32) % size
 
         out = np.zeros_like(data)
-        data = np.concatenate((data,[data[0]]))
+        data = np.concatenate((data, [data[0]]))
 
         for c in range(self._ch):
-            out[:,c] = data[i,c] * (1 - f) + data[i + 1,c] * f
+            out[:, c] = data[i, c] * (1 - f) + data[i + 1, c] * f
 
         return out
 
 # メモリフィルタ
 # 直前に通過した内容を読み取ることができる
+
+
 class Memory(InheritCh):
 
     def __init__(self, source: FilterBase):
         super().__init__(source)
-        self._data = np.zeros((0,1))
+        self._data = np.zeros((0, 1))
 
     def get(self, size):
-        
+
         data = self._source.get(size)
         self._data = data.copy()
 

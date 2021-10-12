@@ -25,6 +25,7 @@ class FilterBase:
     def sample_start_point(self):
         return self._source.sample_start_point
 
+
 class FilterRoot(FilterBase):
 
     def __init__(self, ch):
