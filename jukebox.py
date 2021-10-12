@@ -88,11 +88,12 @@ class Jukebox:
 
             layer = WND(layer, 2048, 128)
             layer = FFT(layer)
+            self._ffft = layer
             layer = SupressSmallNoize(layer, 30)
+            self._fsupress_small_noize = layer
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
-
             layer = RWND(layer, 2048, 128)
 
             layer = Gain(layer , 1)
@@ -135,6 +136,12 @@ class Jukebox:
     def set_spshift(self, value):
         if self._fspshift:
             self._fspshift.value = value
+
+    def set_supress_small_noize(self, value):
+        if value:
+            self._ffftspectrum.set_source(self._fsupress_small_noize)
+        else:
+            self._ffftspectrum.set_source(self._ffft)
 
     # 再生機能
 
