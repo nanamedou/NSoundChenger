@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import write
+import threading as th
+
 import numpy as np
-from numpy.lib.function_base import hamming
 
 from filter.base import FilterBase, InheritCh
 
@@ -129,3 +129,98 @@ class RWND(InheritCh):
                 size -= writesize
 
         return res
+
+# ピッチ変更窓関数
+# 矩形窓関数フィルタ
+# wndmoveだけずらしたwndsizeのデータを返す
+# 例) source[0:wndsize] & source[wndmove :wndmove + wndsize] & source[wndmove * 2 :wndmove * 2 + wndsize] & ...
+class PitchWND(InheritCh):
+
+    def __init__(self, source: FilterBase, wndsize_out: int, wndmove: int, scale: float):
+        super().__init__(source)
+
+        self.lock = th.Lock()
+
+        self._wndsize_out = wndsize_out
+        self._wndsize_in = wndsize_out
+        self._wndmove = wndmove
+        self._buffer = np.zeros(shape=(wndsize_out, self._ch), dtype=np.float32)
+        self.value = float(scale)
+        self._cur = -self._wndsize_out + wndmove      # 書き出すデータのソースにおける頭の位置
+        
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self.lock.acquire()
+
+        # ピッチの変更量を更新
+        self._value = float(value)
+        self._speed = np.exp2(self._value / 12)
+
+        # 出力する時間の長さに対する、サンプル期間を測定
+        sample_duration = self._wndsize_out * self._speed
+        self.sample_duration = sample_duration
+
+        # サンプル期間から必要なバッファの期間とサイズを計測
+        required_duration = sample_duration * 2
+        self.buffer_duration = required_duration
+        required_samples = int(required_duration) + 2
+
+        if(required_samples > self._buffer.shape[0]):
+            add_buf_size = required_samples - self._buffer.shape[0]
+            self._buffer.resize((required_samples, self._ch))
+            self._buffer[-add_buf_size:] = self._source.get(add_buf_size)
+
+        self.lock.release()
+
+    def get(self, size):
+
+        self.lock.acquire()
+
+        # wndmoveだけずらしたwndsizeのデータを返す
+        if(size != self._wndsize_out):
+            print('nanamesst->filter->WND: Requested size is not equal wndmove!!')
+            return np.zeros(shape=(self._ch, self._wndsize_out))
+
+        data = self._source.get(self._wndmove)
+        data = np.concatenate((self._buffer[self._wndmove:], data))
+        self._buffer[:] = data
+        self._cur += self._wndmove
+        
+        # 波の移動速度の取得
+        speed = self._speed
+        in_dur = self.sample_duration
+        out_size = self._wndsize_out
+        buf_dur = self.buffer_duration
+
+        # 初期位置の補正値の計算
+        # ((speed - 1) * 再生位置) % サンプル期間
+        st = speed.copy()
+        st -= 1
+        st *= np.remainder(self._cur, out_size)
+        st %= in_dur
+
+        # サンプル位置の計算
+        point = np.arange(out_size) * speed
+        point += st
+        point = np.fmod(point, buf_dur)
+
+        # インデックスと重みの計算
+        f, i = np.modf(point)
+        f = f.reshape(-1,1)
+        i = i.astype(np.int32)
+
+        # 出力の計算
+        out = data[i] * (1 - f) + data[i + 1] * f
+
+        self.lock.release()
+
+        return out
+
+    @property
+    def sample_start_point(self) -> int:
+        return self._cur

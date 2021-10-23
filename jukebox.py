@@ -61,10 +61,10 @@ class Jukebox:
 
             layer = Delay(layer, 44100)
 
-            layer = PitchWND(layer, 1024, 128, 0)
-            
+            layer = PitchWND(layer, 2048, 128, 0)
             self._fspshift = layer
-            layer = RWND(layer, 1024, 128)
+            layer = Hamming(layer, 2048)
+            layer = RWND(layer, 2048, 128)
 
             
             layer = WND(layer, 1024, 128)
