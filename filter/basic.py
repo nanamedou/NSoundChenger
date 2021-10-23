@@ -14,31 +14,24 @@ class Delay(InheritCh):
         if(delay < 0):
             print('nanamesst->filter->Delay: delay must positive!!')
             delay = 0
-        self._cur = delay
-        self._delay = delay
+        self._cur = -delay
+        self._buffer = np.zeros((delay, self._ch))
 
     # dataは bitデータ * チャンネルデータ
     # 出力は bitデータ * チャンネルデータ
     def get(self, size):
 
-        data = np.zeros(shape=(size, self._ch))
+        data = np.array(self._buffer[0:size])
 
-        # デェレイ中の時データは読み取らない
-        if(self._cur > size):
-            read_size = 0
-            self._cur -= size
-        # デェレイが終わってたらサイズ分読み取る
-        else:
-            read_size = size - self._cur
-            self._cur = 0
-
-        data[size-read_size:size] = self._source.get(read_size)
+        self._buffer[:-size] = self._buffer[size:]
+        self._buffer[-size:] = self._source.get(size)
+        self._cur += size
 
         return data
 
     @property
     def sample_start_point(self):
-        return self._source.sample_start_point - self._delay
+        return self._cur
 
 # ローパスフィルタ
 # rcローパスフィルタを再現する線形フィルタ
@@ -111,7 +104,7 @@ class Pitch(InheritCh):
 
     def __init__(self, source: FilterBase, scale: float):
         super().__init__(source)
-        self._value = float(scale)
+        self.value = float(scale)
 
     @property
     def value(self):
@@ -120,27 +113,33 @@ class Pitch(InheritCh):
     @value.setter
     def value(self, value):
         self._value = float(value)
+        self._speed = np.exp2(self._value / 12)
 
     def get(self, size):
 
+
+        speed = self._speed
+
+        # 初期位置の補正値の計算
+        st = speed
+        st -= 1
+        st *= self._source.sample_start_point % size
+
+        # サンプル位置の計算
+        point = np.arange(size) * speed
+        point += st
+
+        # インデックスと重みの計算
+        f, i = np.modf(point)
+        f = f.reshape(-1,1)
+        i = i.astype(np.int32)
+        i %= size
+
+        # 出力の計算
         data = self._source.get(size)
 
-        speed = np.exp2(self._value / 12)
-        point = np.arange(size) * speed
-
-        st = self._source.sample_start_point % size
-        st = speed * st - st
-        point = point + st
-
-        point = np.mod(point, size)
-        f, i = np.modf(point)
-        i = i.astype(np.int32) % size
-
-        out = np.zeros_like(data)
         data = np.concatenate((data, [data[0]]))
-
-        for c in range(self._ch):
-            out[:, c] = data[i, c] * (1 - f) + data[i + 1, c] * f
+        out = data[i] * (1 - f) + data[i + 1] * f
 
         return out
 
