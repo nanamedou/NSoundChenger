@@ -17,7 +17,7 @@ SAVEFILE = 'hogehoge.mp3'
 if len(sys.argv) >= 2:
     OPENFILE = sys.argv[1]
 else:
-    OPENFILE = './sounds/British_Grenadiers.ogg.mp3'
+    OPENFILE = './sounds/sin2.wav'
 
 
 class Application(tk.Frame):
