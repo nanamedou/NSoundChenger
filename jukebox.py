@@ -94,9 +94,10 @@ class Jukebox:
 
                 # 録音機能
                 if(self._is_recording):
-                    data = np.clip(data, 0.0, 1.0)
-                    self._record_data_list += [(data *
-                                                (2**16 - 1)).astype(np.uint16)]
+                    save = data.copy()
+                    save = np.clip(save, -1.0, 1.0)
+                    self._record_data_list += [(save *
+                                                (2**15 - 1)).astype(np.uint16)]
 
                 return (data, pyaudio.paContinue)
 
@@ -161,10 +162,11 @@ class Jukebox:
             self._fspshift.value = value
 
     def set_supress_small_noize(self, value):
-        if value:
-            self._ffftspectrum.set_source(self._fsupress_small_noize)
-        else:
-            self._ffftspectrum.set_source(self._ffft)
+        pass
+#        if value:
+#            self._fsupress_small_noize_after.set_source(self._fsupress_small_noize)
+#        else:
+ #           self._fsupress_small_noize_after.set_source(self._fsupress_small_noize_before)
 
     # 再生機能
 
@@ -199,7 +201,7 @@ class Jukebox:
                 recorded_length += d.shape[0]
 
             record_data = np.ndarray(
-                shape=(recorded_length, self._ch), dtype=np.int16)
+                shape=(recorded_length, self._ch), dtype=np.uint16)
             saved_length = 0
 
             # 保存するデータの長さを計算
