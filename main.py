@@ -49,7 +49,7 @@ class Application(tk.Frame):
         # 入力選択メニュー
         input_menu_frame = tk.Frame(self)
         input_menu_frame.pack(side=tk.TOP)
-        record_btn = tk.Button(input_menu_frame, text='●', fg='red')
+        record_btn = tk.Button(input_menu_frame, text='●', fg='red',command=lambda: self.jukebox.select_music(mic=True))
         record_btn.pack(side=tk.LEFT)
 
         def openfile():
