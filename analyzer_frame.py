@@ -80,12 +80,8 @@ class OscilloFrame(tk.Frame):
             height = self.canvas.winfo_height()
             width = self.canvas.winfo_width()
 
-            spec = np.concatenate((spec[data_len//2:-1], spec[0:data_len//2]))
-
-            spec = np.abs(spec)
-
             x = width * np.arange(len(spec)-1) // len(spec)-1
-            y = height - 1 - spec * height
+            y = (height / 2) - spec * height * 0.9
 
             self.canvas.create_line(*zip(x, y), tag="line")
 
