@@ -7,13 +7,14 @@ import numpy as np
 
 from filter.base import FilterBase, InheritCh
 
-# 窓関数
-# 矩形窓関数フィルタ
-# wndmoveだけずらしたwndsizeのデータを返す
-# 例) source[0:wndsize] & source[wndmove :wndmove + wndsize] & source[wndmove * 2 :wndmove * 2 + wndsize] & ...
-
 
 class WND(InheritCh):
+    """矩形窓関数フィルタ
+
+    wndmoveだけずらしたwndsizeのデータを返す
+    例) source[0:wndsize] & source[wndmove :wndmove + wndsize] & source[wndmove * 2 :wndmove * 2 + wndsize] & ...
+
+    """
 
     def __init__(self, source: FilterBase, wndsize: int, wndmove: int):
         super().__init__(source)
@@ -27,7 +28,7 @@ class WND(InheritCh):
         # wndmoveだけずらしたwndsizeのデータを返す
 
         if(size != self._wndsize):
-            print('nanamesst->filter->WND: Requested size is not equal wndmove!!')
+            print('nsc->filter->WND: Requested size is not equal wndsize!!')
             return np.zeros(shape=(self._ch, self._wndsize))
 
         data = self._source.get(self._wndmove)
@@ -42,11 +43,13 @@ class WND(InheritCh):
         return self._cur
 
 
-# 窓結合関数
-# 窓関数で分割されたデータを結合する
 class RWND(InheritCh):
+    """窓結合関数
 
-    
+    窓関数で分割されたデータを結合する
+
+    """
+
     def __init__(self, source: FilterBase, wndsize: int, wndmove: int):
         super().__init__(source)
         self._buffer = np.zeros(shape=(wndsize, source._ch))  # 結合済みデータ保存バッファ
@@ -102,55 +105,63 @@ class RWND(InheritCh):
         return res
 
 
-
-# ハミング関数
 class Hamming(InheritCh):
+    """ハミング関数フィルタ
+    """
 
     def __init__(self, source: FilterBase, size: int):
         super().__init__(source)
-        self._hamming = np.blackman(size)
+        self._filter = np.blackman(size)
 
     def get(self, size):
         data = self._source.get(size).copy()
 
-        for c in range(self._ch):
-            data[:, c] *= self._hamming
+        data *= self._filter.reshape(-1, 1)
 
         return data
 
-# ハニング関数
+
 class Hanning(InheritCh):
+    """ハニング関数フィルタ
+    """
 
     def __init__(self, source: FilterBase, size: int):
         super().__init__(source)
-        self._hamming = np.hanning(size)
+        self._filter = np.hanning(size)
 
     def get(self, size):
         data = self._source.get(size).copy()
 
-        for c in range(self._ch):
-            data[:, c] *= self._hamming
+        data *= self._filter.reshape(-1, 1)
 
         return data
 
-# ブラックマン関数
+
 class Blackman(InheritCh):
+    """ブラックマン関数フィルタ
+    """
 
     def __init__(self, source: FilterBase, size: int):
         super().__init__(source)
-        self._hamming = np.blackman(size)
+        self._filter = np.blackman(size)
 
     def get(self, size):
         data = self._source.get(size).copy()
 
-        for c in range(self._ch):
-            data[:, c] *= self._hamming
+        data *= self._filter.reshape(-1, 1)
 
         return data
 
 
-# 中央よせで0パディング
 class Padding(InheritCh):
+    """中央よせ0パディング
+
+    in[4],out[8]の時以下のように変換する
+    1111
+    00111100
+
+    2の倍数の大きさである必要がある
+    """
 
     def __init__(self, source: FilterBase, size_in: int, size_out: int):
         super().__init__(source)
@@ -171,8 +182,15 @@ class Padding(InheritCh):
         return self._buffer
 
 
-# 中央よせで0サプレス
 class Suppress(InheritCh):
+    """中央よせ0サプレス
+
+    in[8],out[4]の時以下のように変換する
+    00111100
+    1111
+
+    2の倍数の大きさである必要がある
+    """
 
     def __init__(self, source: FilterBase, size_in: int, size_out: int):
         super().__init__(source)
@@ -187,11 +205,17 @@ class Suppress(InheritCh):
         return self._source.get(self._size_in)[mid - half_out:mid + half_out]
 
 
-# ピッチ変更窓関数
-# 矩形窓関数フィルタ
-# wndmoveだけずらしたwndsizeのデータを返す
-# 例) source[0:wndsize] & source[wndmove :wndmove + wndsize] & source[wndmove * 2 :wndmove * 2 + wndsize] & ...
 class PitchWND(InheritCh):
+    """ピッチ変更窓関数
+
+    矩形窓関数フィルタにピッチ変更処理を組み合わせた
+    ピッチを変更方法は、
+    まず、出力の2**(scale/12) * 2倍のデータをサンプリングする。
+    そこからちょうど良い、出力の2**(scale/12)倍のデータを選ぶ。
+    出力のサイズまで縮める。
+    以上。
+
+    """
 
     def __init__(self, source: FilterBase, wndsize_out: int, wndmove: int, scale: float):
         super().__init__(source)
@@ -201,10 +225,10 @@ class PitchWND(InheritCh):
         self._wndsize_out = wndsize_out
         self._wndsize_in = wndsize_out
         self._wndmove = wndmove
-        self._buffer = np.zeros(shape=(wndsize_out, self._ch), dtype=np.float32)
+        self._buffer = np.zeros(
+            shape=(wndsize_out, self._ch), dtype=np.float32)
         self.value = float(scale)
         self._cur = -self._wndsize_out + wndmove      # 書き出すデータのソースにおける頭の位置
-        
 
     @property
     def value(self):
@@ -240,14 +264,14 @@ class PitchWND(InheritCh):
 
         # wndmoveだけずらしたwndsizeのデータを返す
         if(size != self._wndsize_out):
-            print('nanamesst->filter->WND: Requested size is not equal wndmove!!')
+            print('nsc->filter->PitchWND: Requested size is not equal wndsize!!')
             return np.zeros(shape=(self._ch, self._wndsize_out))
 
         data = self._source.get(self._wndmove)
         data = np.concatenate((self._buffer[self._wndmove:], data))
         self._buffer[:] = data
         self._cur += self._wndmove
-        
+
         # 波の移動速度の取得
         speed = self._speed
         in_dur = self.sample_duration
@@ -268,7 +292,7 @@ class PitchWND(InheritCh):
 
         # インデックスと重みの計算
         f, i = np.modf(point)
-        f = f.reshape(-1,1)
+        f = f.reshape(-1, 1)
         i = i.astype(np.int32)
 
         # 出力の計算

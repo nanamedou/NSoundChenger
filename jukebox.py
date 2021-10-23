@@ -5,13 +5,11 @@ import pyaudio
 
 from pydub import AudioSegment
 import numpy as np
-import math
 
 from filter.source import Source, SourceStream
-from filter.basic import Gain, Memory, Pitch, Delay, Pitch2
-from filter.wnd import WND, RWND, Blackman, Hamming, Padding, Suppress, PitchWND
+from filter.basic import Gain, Memory, Delay
+from filter.wnd import WND, RWND, Blackman, PitchWND
 from filter.fft import FFT, IFFT
-from filter.spectrum import SupressSmallNoize
 
 from os.path import splitext
 
@@ -19,15 +17,9 @@ class Jukebox:
     def __init__(self) -> None:
         self.audio = pyaudio.PyAudio()
 
-        self.is_enable = True
+        self.is_enable = False
 
-        self.output = None
-
-        self._is_recording = False
-        self._record_data_list = []
-
-        self._sampling_rate = 0
-        self._ch = 0
+        self.enable()
 
     def __del__(self) -> None:
 
@@ -66,19 +58,15 @@ class Jukebox:
             layer = Blackman(layer, 2048)
             layer = RWND(layer, 2048, 128)
 
-            
             layer = WND(layer, 1024, 128)
-
             layer = FFT(layer)
             self._ffft = layer
-
             layer = Memory(layer)
             self._ffftspectrum = layer
-
             layer = IFFT(layer)
-
             layer = RWND(layer, 1024, 128)
 
+            layer = Gain(layer, 2)
             layer = Gain(layer, 1)
             self._fgain = layer
 
