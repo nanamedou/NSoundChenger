@@ -14,31 +14,24 @@ class Delay(InheritCh):
         if(delay < 0):
             print('nanamesst->filter->Delay: delay must positive!!')
             delay = 0
-        self._cur = delay
-        self._delay = delay
+        self._cur = -delay
+        self._buffer = np.zeros((delay, self._ch))
 
     # dataは bitデータ * チャンネルデータ
     # 出力は bitデータ * チャンネルデータ
     def get(self, size):
 
-        data = np.zeros(shape=(size, self._ch))
+        data = np.array(self._buffer[0:size])
 
-        # デェレイ中の時データは読み取らない
-        if(self._cur > size):
-            read_size = 0
-            self._cur -= size
-        # デェレイが終わってたらサイズ分読み取る
-        else:
-            read_size = size - self._cur
-            self._cur = 0
-
-        data[size-read_size:size] = self._source.get(read_size)
+        self._buffer[:-size] = self._buffer[size:]
+        self._buffer[-size:] = self._source.get(size)
+        self._cur += size
 
         return data
 
     @property
     def sample_start_point(self):
-        return self._source.sample_start_point - self._delay
+        return self._cur
 
 # ローパスフィルタ
 # rcローパスフィルタを再現する線形フィルタ
