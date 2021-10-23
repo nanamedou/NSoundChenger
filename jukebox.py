@@ -17,15 +17,9 @@ class Jukebox:
     def __init__(self) -> None:
         self.audio = pyaudio.PyAudio()
 
-        self.is_enable = True
+        self.is_enable = False
 
-        self.output = None
-
-        self._is_recording = False
-        self._record_data_list = []
-
-        self._sampling_rate = 0
-        self._ch = 0
+        self.enable()
 
     def __del__(self) -> None:
 

@@ -5,13 +5,10 @@ from jukebox import *
 import tkinter as tk
 import tkinter.filedialog
 from analyzer_frame import AnalyzerFrame, OscilloFrame
-from numpy.core.numeric import isclose
 import os
 import sys
-FFMPEG_PATH = 'I:\\ffmpeg'
 
-
-OPENFILE = 0
+OPENFILE = ''
 SAVEFILE = 'hogehoge.mp3'
 
 if len(sys.argv) >= 2:
