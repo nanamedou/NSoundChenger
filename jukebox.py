@@ -7,9 +7,9 @@ from pydub import AudioSegment
 import numpy as np
 import math
 
-from filter.source import Source
-from filter.basic import Gain, Memory, Pitch
-from filter.wnd import WND, RWND, Hamming
+from filter.source import Source, SourceStream
+from filter.basic import Gain, Memory, Pitch, Delay
+from filter.wnd import WND, RWND, Hamming, Padding, Suppress, PitchWND
 from filter.fft import FFT, IFFT
 from filter.spectrum import SupressSmallNoize
 
@@ -22,7 +22,6 @@ class Jukebox:
         self.is_enable = True
 
         self.output = None
-        self.source = None
 
         self._is_recording = False
         self._record_data_list = []
@@ -39,7 +38,6 @@ class Jukebox:
             self.is_enable = True
 
             self.output = None
-            self.source = None
 
             self._is_recording = False
             self._record_data_list = []
@@ -56,14 +54,73 @@ class Jukebox:
                 self.output.close()
 
             self.audio.terminate()
+    
+    def make_pipeline(self, source):
+            layer = source
+            self._fsource = layer
+
+            layer = Delay(layer, 44100)
+
+            layer = PitchWND(layer, 1024, 128, 0)
+            
+            self._fspshift = layer
+            layer = RWND(layer, 1024, 128)
+
+            
+            layer = WND(layer, 1024, 128)
+
+            layer = FFT(layer)
+            self._ffft = layer
+
+            layer = Memory(layer)
+            self._ffftspectrum = layer
+
+            layer = IFFT(layer)
+
+            layer = RWND(layer, 1024, 128)
+
+            layer = Gain(layer, 1)
+            self._fgain = layer
+
+            layer = Memory(layer)
+            self._fmemout = layer
+
+            self.output_layer = layer
+
+            def callback(in_data, frame_count, time_info, status):
+
+                # 読み取り
+                data = self.output_layer.get(frame_count).astype(np.float32)
+
+                # 録音機能
+                if(self._is_recording):
+                    data = np.clip(data, 0.0, 1.0)
+                    self._record_data_list += [(data *
+                                                (2**16 - 1)).astype(np.uint16)]
+
+                return (data, pyaudio.paContinue)
+
+            return callback 
+
 
     def select_music(self, mic: bool = True, musicpath=None):
         if(self.output):
             self.output.close()
 
         if(mic):
-            # 未実装
-            pass
+
+            self._ch = 1
+            self._sampling_rate = 44100
+
+            self.input = self.audio.open(format=pyaudio.paFloat32,
+                                          channels=self._ch,
+                                          rate=self._sampling_rate,
+                                          frames_per_buffer=1024,
+                                          input=True,
+                                          input_device_index=0)
+
+            sound_source = SourceStream(self.input,self._ch,self._sampling_rate)
+
         else:
             # 音声データを読み取る
             _, ext = splitext(musicpath)
@@ -77,56 +134,21 @@ class Jukebox:
             audio_array_data = np.array(
                 audio_array_data, dtype=np.float32) / int_size
 
-            # 入力から出力までのフィルタパイプラインを構築
-            layer = Source(audio_array_data.reshape(
+            sound_source = Source(audio_array_data.reshape(
                 (-1, audio_data.channels)), audio_data.frame_rate)
-            self._fsource = layer
-
-            layer = WND(layer, 1024, 32)
-            layer = Pitch(layer, 0)
-            self._fspshift = layer
-            layer = RWND(layer, 1024, 32)
-
-            layer = WND(layer, 1024, 64)
-            layer = FFT(layer)
-            self._ffft = layer
-            layer = SupressSmallNoize(layer, 30)
-            self._fsupress_small_noize = layer
-            layer = Memory(layer)
-            self._ffftspectrum = layer
-            layer = IFFT(layer)
-            layer = RWND(layer, 1024, 64)
-
-            layer = Gain(layer, 1)
-            self._fgain = layer
-
-            layer = Memory(layer)
-            self._fmemout = layer
-
-            self.source = layer
-
-            def callback(in_data, frame_count, time_info, status):
-
-                # 読み取り
-                data = self.source.get(frame_count).astype(np.float32)
-
-                # 録音機能
-                if(self._is_recording):
-                    data = np.clip(data, 0.0, 1.0)
-                    self._record_data_list += [(data *
-                                                (2**16 - 1)).astype(np.uint16)]
-
-                return (data, pyaudio.paContinue)
 
             self._ch = audio_data.channels
             self._sampling_rate = audio_data.frame_rate
 
-            self.output = self.audio.open(format=pyaudio.paFloat32,
-                                          channels=self._ch,
-                                          rate=self._sampling_rate,
-                                          frames_per_buffer=1024,
-                                          output=True,
-                                          stream_callback=callback)
+        # 入力から出力までのフィルタパイプラインを構築
+        callback = self.make_pipeline(sound_source)
+
+        self.output = self.audio.open(format=pyaudio.paFloat32,
+                                        channels=self._ch,
+                                        rate=self._sampling_rate,
+                                        frames_per_buffer=1024,
+                                        output=True,
+                                        stream_callback=callback)
 
     # フィルタ調整機能
 
