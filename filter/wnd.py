@@ -42,40 +42,11 @@ class WND(InheritCh):
         return self._cur
 
 
-class Hamming(InheritCh):
-
-    def __init__(self, source: FilterBase, size: int):
-        super().__init__(source)
-        self._hamming = np.hamming(size)
-
-    def get(self, size):
-        data = self._source.get(size).copy()
-
-        for c in range(self._ch):
-            data[:, c] *= self._hamming
-
-        return data
-
-
-class IHamming(InheritCh):
-
-    def __init__(self, source: FilterBase, size: int):
-        super().__init__(source)
-        self._ihamming = 1 / np.hamming(size)
-
-    def get(self, size):
-        data = self._source.get(size).copy()
-
-        for c in range(self._ch):
-            data[:, c] *= self._ihamming
-
-        return data
-
-
 # 窓結合関数
 # 窓関数で分割されたデータを結合する
 class RWND(InheritCh):
 
+    
     def __init__(self, source: FilterBase, wndsize: int, wndmove: int):
         super().__init__(source)
         self._buffer = np.zeros(shape=(wndsize, source._ch))  # 結合済みデータ保存バッファ
@@ -129,6 +100,92 @@ class RWND(InheritCh):
                 size -= writesize
 
         return res
+
+
+
+# ハミング関数
+class Hamming(InheritCh):
+
+    def __init__(self, source: FilterBase, size: int):
+        super().__init__(source)
+        self._hamming = np.blackman(size)
+
+    def get(self, size):
+        data = self._source.get(size).copy()
+
+        for c in range(self._ch):
+            data[:, c] *= self._hamming
+
+        return data
+
+# ハニング関数
+class Hanning(InheritCh):
+
+    def __init__(self, source: FilterBase, size: int):
+        super().__init__(source)
+        self._hamming = np.hanning(size)
+
+    def get(self, size):
+        data = self._source.get(size).copy()
+
+        for c in range(self._ch):
+            data[:, c] *= self._hamming
+
+        return data
+
+# ブラックマン関数
+class Blackman(InheritCh):
+
+    def __init__(self, source: FilterBase, size: int):
+        super().__init__(source)
+        self._hamming = np.blackman(size)
+
+    def get(self, size):
+        data = self._source.get(size).copy()
+
+        for c in range(self._ch):
+            data[:, c] *= self._hamming
+
+        return data
+
+
+# 中央よせで0パディング
+class Padding(InheritCh):
+
+    def __init__(self, source: FilterBase, size_in: int, size_out: int):
+        super().__init__(source)
+        self._buffer = np.zeros(shape=(size_out, self._ch))
+        self._size_in = size_in
+        self._size_out = size_out
+
+    def get(self, size):
+
+        self._buffer.fill(0)
+
+        mid = self._size_out // 2
+        half_in = self._size_in // 2
+
+        self._buffer[mid - half_in:mid +
+                     half_in] = self._source.get(self._size_in)
+
+        return self._buffer
+
+
+# 中央よせで0サプレス
+class Suppress(InheritCh):
+
+    def __init__(self, source: FilterBase, size_in: int, size_out: int):
+        super().__init__(source)
+        self._size_in = size_in
+        self._size_out = size_out
+
+    def get(self, size):
+
+        mid = self._size_in // 2
+        half_out = self._size_out // 2
+
+        return self._source.get(self._size_in)[mid - half_out:mid + half_out]
+
 
 # ピッチ変更窓関数
 # 矩形窓関数フィルタ

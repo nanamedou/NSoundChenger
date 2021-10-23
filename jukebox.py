@@ -8,8 +8,8 @@ import numpy as np
 import math
 
 from filter.source import Source, SourceStream
-from filter.basic import Gain, Memory, Pitch, Delay
-from filter.wnd import WND, RWND, Hamming, Padding, Suppress, PitchWND
+from filter.basic import Gain, Memory, Pitch, Delay, Pitch2
+from filter.wnd import WND, RWND, Blackman, Hamming, Padding, Suppress, PitchWND
 from filter.fft import FFT, IFFT
 from filter.spectrum import SupressSmallNoize
 
@@ -63,7 +63,7 @@ class Jukebox:
 
             layer = PitchWND(layer, 2048, 128, 0)
             self._fspshift = layer
-            layer = Hamming(layer, 2048)
+            layer = Blackman(layer, 2048)
             layer = RWND(layer, 2048, 128)
 
             
