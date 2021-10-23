@@ -111,7 +111,7 @@ class Pitch(InheritCh):
 
     def __init__(self, source: FilterBase, scale: float):
         super().__init__(source)
-        self._value = float(scale)
+        self.value = float(scale)
 
     @property
     def value(self):
@@ -120,27 +120,33 @@ class Pitch(InheritCh):
     @value.setter
     def value(self, value):
         self._value = float(value)
+        self._speed = np.exp2(self._value / 12)
 
     def get(self, size):
 
+
+        speed = self._speed
+
+        # 初期位置の補正値の計算
+        st = speed
+        st -= 1
+        st *= self._source.sample_start_point % size
+
+        # サンプル位置の計算
+        point = np.arange(size) * speed
+        point += st
+
+        # インデックスと重みの計算
+        f, i = np.modf(point)
+        f = f.reshape(-1,1)
+        i = i.astype(np.int32)
+        i %= size
+
+        # 出力の計算
         data = self._source.get(size)
 
-        speed = np.exp2(self._value / 12)
-        point = np.arange(size) * speed
-
-        st = self._source.sample_start_point % size
-        st = speed * st - st
-        point = point + st
-
-        point = np.mod(point, size)
-        f, i = np.modf(point)
-        i = i.astype(np.int32) % size
-
-        out = np.zeros_like(data)
         data = np.concatenate((data, [data[0]]))
-
-        for c in range(self._ch):
-            out[:, c] = data[i, c] * (1 - f) + data[i + 1, c] * f
+        out = data[i] * (1 - f) + data[i + 1] * f
 
         return out
 
