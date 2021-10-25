@@ -51,20 +51,18 @@ class Jukebox:
             layer = source
             self._fsource = layer
 
-            layer = Delay(layer, 44100)
-
             layer = PitchWND(layer, 2048, 128, 0)
             self._fspshift = layer
             layer = Blackman(layer, 2048)
             layer = RWND(layer, 2048, 128)
 
-            layer = WND(layer, 1024, 128)
+            layer = WND(layer, 4098, 512)
             layer = FFT(layer)
             self._ffft = layer
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
-            layer = RWND(layer, 1024, 128)
+            layer = RWND(layer, 4098, 512)
 
             layer = Gain(layer, 2)
             layer = Gain(layer, 1)
