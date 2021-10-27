@@ -33,36 +33,63 @@ class Delay(InheritCh):
     def sample_start_point(self):
         return self._cur
 
-# ローパスフィルタ
-# rcローパスフィルタを再現する線形フィルタ
 
 
-class LPF(FilterBase):
+class LPF(InheritCh):
+    """ローパスフィルタ
 
-    def __init__(self, source, ch, rc, sample_rate, initial, channels):
-        super().__init__(source, ch)
-        self.initial = initial
-        self.rc = rc
-        self.sample_rate = sample_rate
-        self.dt = 1.0 / sample_rate
-        self.channels = channels
+    CRローパスフィルタを再現する線形フィルタ
+    """
 
-    # dataは bitデータ * チャンネルデータ
-    # 出力は bitデータ * チャンネルデータ
+    def __init__(self, source, rc, sample_rate, initial):
+        super().__init__(source)
+        self.mems = np.zeros(self._ch)  # 積分器メモリ
+        self.memd = np.zeros(self._ch)  # フィードバックメモリ
+        self.rc = rc                    # rc
+        self.sample_rate = sample_rate  # サンプル周波数
+        self.dt = 1.0 / sample_rate     # 1サンプル当たりの時間
+        self.rrc = 1.0 / self.rc        # rcの逆数
+
     def get(self, size):
-        data = self.source.get(size)
+        data = self._source.get(size)
         buf = np.zeros_like(data)
-        for channel in range(self.channels):
-            data_ic_view = data[:, channel]
-            data_oc_view = buf[:, channel]
-            oldsig = self.initial[channel]
-            rc = self.rc
-            dt = self.dt
-            for i in range(len(data_ic_view)):
-                newsig = oldsig + (1.0 / rc) * (data_ic_view[i] - oldsig) * dt
-                data_oc_view[i] = newsig
-                oldsig = newsig
-            self.initial[channel] = oldsig
+
+        for x, y in zip(data, np.arange(buf.shape[0])):
+            x2 = x - self.memd              # フィードバックで差分を取得
+            x3 = x2 * self.dt * self.rrc    # 時間とrcで変化量決定
+            self.mems += x3                 # 積分
+            buf[y] = self.mems              # 出力する
+            self.memd = self.mems           # フィードバックメモリに格納
+
+        return buf
+
+        
+class HPF(InheritCh):
+    """ハイパスフィルタ
+
+    CRハイパスフィルタを再現する線形フィルタ
+    """
+
+
+    def __init__(self, source, rc, sample_rate, initial):
+        super().__init__(source)
+        self.mems = np.zeros(self._ch)  # 積分器メモリ
+        self.memd = np.zeros(self._ch)  # フィードバックメモリ
+        self.rc = rc                    # rc
+        self.sample_rate = sample_rate  # サンプル周波数
+        self.dt = 1.0 / sample_rate     # 1サンプル当たりの時間
+        self.rrc = 1.0 / self.rc        # rcの逆数
+
+    def get(self, size):
+        data = self._source.get(size)
+        buf = np.zeros_like(data)
+
+        for x, y in zip(data, np.arange(buf.shape[0])):
+            x2 = x - self.memd              # フィードバックで差分を取得
+            buf[y] = x2                     # 出力する
+            x3 = x2 * self.dt * self.rrc    # 時間とrcで変化
+            self.mems += x3                 # 積分
+            self.memd = self.mems           # フィードバックメモリに格納
 
         return buf
 
