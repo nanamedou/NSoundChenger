@@ -56,13 +56,13 @@ class Jukebox:
             layer = Blackman(layer, 2048)
             layer = RWND(layer, 2048, 128)
 
-            layer = WND(layer, 4098, 512)
+            layer = WND(layer, 4096, 512)
             layer = FFT(layer)
             self._ffft = layer
             layer = Memory(layer)
             self._ffftspectrum = layer
             layer = IFFT(layer)
-            layer = RWND(layer, 4098, 512)
+            layer = RWND(layer, 4096, 512)
 
             layer = Gain(layer, 2)
             layer = Gain(layer, 1)
