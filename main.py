@@ -101,6 +101,12 @@ class Application(tk.Frame):
         self.antinoize_rbtn = tk.Checkbutton(
             filter_menu_frame, text='Anti noize type1', command=c, variable=v)
         self.antinoize_rbtn.pack(side=tk.LEFT, fill=tk.X)
+        v2 = tk.IntVar()
+        v2.set(1)
+        def c(): return self.jukebox.set_supress_stationary_noize(v2.get())
+        self.antinoize_rbtn = tk.Checkbutton(
+            filter_menu_frame, text='Anti noize type2', command=c, variable=v2)
+        self.antinoize_rbtn.pack(side=tk.LEFT, fill=tk.X)
 
         # オシロ画面
         self.wave_graph = AnalyzerFrame(self, self.jukebox)

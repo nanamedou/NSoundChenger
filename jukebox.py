@@ -5,11 +5,13 @@ import pyaudio
 
 from pydub import AudioSegment
 import numpy as np
+from filter.base import FilterBase, InheritCh
 
 from filter.source import Source, SourceStream
 from filter.basic import Gain, Memory, Delay
 from filter.wnd import WND, RWND, Blackman, PitchWND
 from filter.fft import FFT, IFFT
+from filter.spectrum import RemoveSmallNoize, SupressStationaryNoize
 
 from os.path import splitext
 
@@ -55,13 +57,27 @@ class Jukebox:
             self._fspshift = layer
             layer = Blackman(layer, 2048)
             layer = RWND(layer, 2048, 128)
+            layer = Gain(layer, 2)
+
+            #layer = Delay(layer, 44100)
 
             layer = WND(layer, 4096, 512)
             layer = FFT(layer)
             self._ffft = layer
+            self._fsupress_stationary_noize_before = layer
+            layer = SupressStationaryNoize(layer, 4096, 512 / 44100, 3, 0.5)
+            self._fsupress_stationary_noize = layer
+            layer = InheritCh(layer)
+            self._fsupress_stationary_noize_after = layer
+
+            self._fsupress_small_noize_before = layer
+            layer = RemoveSmallNoize(layer, 20)
+            self._fsupress_small_noize = layer
             layer = Memory(layer)
             self._ffftspectrum = layer
+            self._fsupress_small_noize_after = layer
             layer = IFFT(layer)
+            layer = Blackman(layer, 4096)
             layer = RWND(layer, 4096, 512)
 
             layer = Gain(layer, 2)
@@ -149,10 +165,17 @@ class Jukebox:
 
     def set_supress_small_noize(self, value):
         pass
-#        if value:
-#            self._fsupress_small_noize_after.set_source(self._fsupress_small_noize)
-#        else:
- #           self._fsupress_small_noize_after.set_source(self._fsupress_small_noize_before)
+        if value:
+            self._fsupress_small_noize_after.set_source(self._fsupress_small_noize)
+        else:
+            self._fsupress_small_noize_after.set_source(self._fsupress_small_noize_before)
+
+    def set_supress_stationary_noize(self, value):
+        pass
+        if value:
+            self._fsupress_stationary_noize_after.set_source(self._fsupress_stationary_noize)
+        else:
+            self._fsupress_stationary_noize_after.set_source(self._fsupress_stationary_noize_before)
 
     # 再生機能
 

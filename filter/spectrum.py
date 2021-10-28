@@ -220,6 +220,7 @@ class RemoveSmallNoize(InheritCh):
 class SupressStationaryNoize(InheritCh):
     """定常ノイズを低減するフィルタ
 
+    いい感じに動作しない…
 
     """
     def __init__(self, source: FilterBase, size: int, dt: float, time: float = 1, power: float = 0.5):
