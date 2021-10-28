@@ -65,7 +65,7 @@ class Jukebox:
             layer = FFT(layer)
             self._ffft = layer
             self._fsupress_stationary_noize_before = layer
-            layer = SupressStationaryNoize(layer, 4096, 512 / 44100, 3, 0.5)
+            layer = SupressStationaryNoize(layer, 4096, 512 / 44100, 1, 0.5)
             self._fsupress_stationary_noize = layer
             layer = InheritCh(layer)
             self._fsupress_stationary_noize_after = layer
