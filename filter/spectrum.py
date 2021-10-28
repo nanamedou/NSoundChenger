@@ -220,7 +220,7 @@ class RemoveSmallNoize(InheritCh):
 class SupressStationaryNoize(InheritCh):
     """定常ノイズを低減するフィルタ
 
-    いい感じに動作しない…
+    同じ高さの音が長時間出ていたらその分だけパワーを抑えて出力する
 
     """
     def __init__(self, source: FilterBase, size: int, dt: float, time: float = 1, power: float = 0.5):
@@ -234,27 +234,25 @@ class SupressStationaryNoize(InheritCh):
         """
         super().__init__(source)
         self._size = size
-        self._mem = np.zeros((size, self._ch), dtype=np.complex128)
+        self._mem = np.zeros((size, self._ch), dtype=np.float64)
         self._dt = dt
         self._rc = time / - np.log(power)
         self._power = power
-        self.de = 2.0j * np.pi * np.arange(size) / size
 
     def get(self, size):
         start_point = self._source.sample_start_point
         data = self._source.get(size)
 
-        dt = 2.0j * np.pi * start_point * np.arange(size) / size
-        dr = np.exp(dt).reshape(-1,1)
+        x1 = np.abs(data)
 
-        data = data * dr.conjugate()
+        x2 = x1 - self._mem
 
-        x1 = data - self._mem
+        self._mem += x2 * self._dt / self._rc
 
-        self._mem += x1 * self._dt / self._rc
+        np.place(x1, x1==0, 1e-16)
 
-    #    np.place(x1, np.abs(np.abs(data) - np.abs(self._mem)) < self._power * np.abs(data), 0)
+        np.place(x2, x2 < 0, 0)
 
-        x1 *= dr
+        data = data * x2 / x1
 
-        return x1
+        return data
