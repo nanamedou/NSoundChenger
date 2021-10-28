@@ -188,7 +188,7 @@ class SpectrumPitch(InheritCh):
         self._generate_matrix()
 
 
-class SupressSmallNoize(InheritCh):
+class RemoveSmallNoize(InheritCh):
 
     def __init__(self, source: FilterBase, db_dffs: float = 20):
         super().__init__(source)
@@ -215,3 +215,45 @@ class SupressSmallNoize(InheritCh):
     def value(self, db_dffs: float):
         self._db = float(db_dffs)
         self._threshold_mod = 1 / np.power(10, db_dffs / 20)
+
+
+class SupressStationaryNoize(InheritCh):
+    """定常ノイズを低減するフィルタ
+
+
+    """
+    def __init__(self, source: FilterBase, size: int, dt: float, time: float = 1, power: float = 0.5):
+        """
+
+        Args:
+            size : フィルタのサイズ
+            dt : フィルタを掛ける間隔(秒)
+            time : powerで指定した値まで減衰するまでの時間
+            power : パワーでの減衰量
+        """
+        super().__init__(source)
+        self._size = size
+        self._mem = np.zeros((size, self._ch), dtype=np.complex128)
+        self._dt = dt
+        self._rc = time / - np.log(power)
+        self._power = power
+        self.de = 2.0j * np.pi * np.arange(size) / size
+
+    def get(self, size):
+        start_point = self._source.sample_start_point
+        data = self._source.get(size)
+
+        dt = 2.0j * np.pi * start_point * np.arange(size) / size
+        dr = np.exp(dt).reshape(-1,1)
+
+        data = data * dr.conjugate()
+
+        x1 = data - self._mem
+
+        self._mem += x1 * self._dt / self._rc
+
+    #    np.place(x1, np.abs(np.abs(data) - np.abs(self._mem)) < self._power * np.abs(data), 0)
+
+        x1 *= dr
+
+        return x1
