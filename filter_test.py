@@ -79,8 +79,10 @@ def test_SupressStationaryNoize():
 
     layer = Source(DATA_SIN100, sampling_rate)
     layer = WND(layer, wndsize, wndmove)
+    #layer = Blackman(layer, wndsize)
     layer = FFT(layer)
-    layer = SupressStationaryNoize(layer, wndsize, wndmove / sampling_rate, 0.1, 0.5)
+    
+    layer = SupressStationaryNoize(layer, wndsize, wndmove / sampling_rate, 0.1, 0.3)
     layer = IFFT(layer)
     layer = RWND(layer, wndsize, wndmove)
 
